@@ -1,0 +1,10 @@
+.env
+*.pyc
+__pycache__/
+.venv/
+backend/theHarvester/.venv/
+backend/recondns/
+backend/*.zip
+backend.zip
+*.sqlite
+data/
