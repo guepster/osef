@@ -2,7 +2,7 @@
 Agent Sherlock — recherche username sur 300+ plateformes
 Nécessite: pip install sherlock-project
 """
-import subprocess, json, re, tempfile, os
+import subprocess, json, re, tempfile, os, sys, shutil
 
 KNOWN_PLATFORMS = [
     "Twitter","Instagram","GitHub","LinkedIn","Reddit","TikTok","YouTube",
@@ -10,6 +10,28 @@ KNOWN_PLATFORMS = [
     "HackerNews","ProductHunt","DeviantArt","Flickr","Tumblr","WordPress",
     "Patreon","OnlyFans","Fiverr","Upwork","Behance","Dribbble","Vimeo",
 ]
+
+def _find_sherlock():
+    """Cherche sherlock dans PATH + dossiers Python Scripts (Windows/Linux)"""
+    found = shutil.which("sherlock")
+    if found:
+        return found
+    # Chercher dans les dossiers Scripts Python courants (Windows)
+    python_dirs = [
+        os.path.dirname(sys.executable),
+        os.path.join(os.path.dirname(sys.executable), "Scripts"),
+        os.path.join(os.path.expanduser("~"), "AppData", "Local", "Programs", "Python", "Python313", "Scripts"),
+        os.path.join(os.path.expanduser("~"), "AppData", "Local", "Programs", "Python", "Python312", "Scripts"),
+        os.path.join(os.path.expanduser("~"), "AppData", "Roaming", "Python", "Python313", "Scripts"),
+        os.path.join(os.path.expanduser("~"), "AppData", "Roaming", "Python", "Python312", "Scripts"),
+        "/usr/local/bin", "/usr/bin", os.path.expanduser("~/.local/bin"),
+    ]
+    for d in python_dirs:
+        for name in ["sherlock.exe", "sherlock"]:
+            full = os.path.join(d, name)
+            if os.path.exists(full):
+                return full
+    return None
 
 def agent_sherlock(query, ctx, emit):
     emit("agent_start", {"id": "sherlock", "msg": f"Sherlock — recherche username '{query}' sur 300+ sites..."})
@@ -22,8 +44,11 @@ def agent_sherlock(query, ctx, emit):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             out_file = os.path.join(tmpdir, f"{username}.txt")
+            sherlock_exe = _find_sherlock()
+            if not sherlock_exe:
+                raise FileNotFoundError("sherlock not found")
             cmd = [
-                "sherlock",
+                sherlock_exe,
                 username,
                 "--output", out_file,
                 "--timeout", "10",
@@ -32,7 +57,7 @@ def agent_sherlock(query, ctx, emit):
 
             # Mode deep = plus de timeout par site
             if ctx.get("depth") == "deep":
-                cmd = ["sherlock", username, "--output", out_file, "--timeout", "20", "--print-found"]
+                cmd = [sherlock_exe, username, "--output", out_file, "--timeout", "20", "--print-found"]
 
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
 

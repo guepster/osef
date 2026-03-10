@@ -2,7 +2,28 @@
 Agent Holehe — vérifie si un email est enregistré sur 120+ services
 Nécessite: pip install holehe
 """
-import subprocess, re, json
+import subprocess, re, json, sys, os, shutil
+
+def _find_holehe():
+    """Cherche holehe dans PATH + dossiers Python Scripts (Windows/Linux)"""
+    found = shutil.which("holehe")
+    if found:
+        return found
+    python_dirs = [
+        os.path.dirname(sys.executable),
+        os.path.join(os.path.dirname(sys.executable), "Scripts"),
+        os.path.join(os.path.expanduser("~"), "AppData", "Local", "Programs", "Python", "Python313", "Scripts"),
+        os.path.join(os.path.expanduser("~"), "AppData", "Local", "Programs", "Python", "Python312", "Scripts"),
+        os.path.join(os.path.expanduser("~"), "AppData", "Roaming", "Python", "Python313", "Scripts"),
+        os.path.join(os.path.expanduser("~"), "AppData", "Roaming", "Python", "Python312", "Scripts"),
+        "/usr/local/bin", "/usr/bin", os.path.expanduser("~/.local/bin"),
+    ]
+    for d in python_dirs:
+        for name in ["holehe.exe", "holehe"]:
+            full = os.path.join(d, name)
+            if os.path.exists(full):
+                return full
+    return None
 
 def agent_holehe(query, ctx, emit):
     emit("agent_start", {"id": "holehe", "msg": f"Holehe — vérification email sur 120+ services..."})
@@ -21,6 +42,10 @@ def agent_holehe(query, ctx, emit):
                 return {"source": "Holehe", "status": "skip", "data": None}
 
         cmd = ["holehe", email, "--no-color", "--only-used"]
+        holehe_exe = _find_holehe()
+        if not holehe_exe:
+            raise FileNotFoundError("holehe not found")
+        cmd = [holehe_exe, email, "--no-color", "--only-used"]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
 
         registered = []
