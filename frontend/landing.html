@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — OSINT Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05070f;--bg1:#080c18;--bg2:#0d1225;
+  --g:#00ff88;--b:#00d4ff;--r:#ff3355;--p:#7c3aed;--o:#ff8c00;
+  --text:#e2eaff;--muted:#4a5880;
+  --mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,212,255,0.018) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,212,255,0.018) 1px,transparent 1px);
+  background-size:64px 64px;pointer-events:none;z-index:0;
+}
+
+/* NAV */
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 60px;border-bottom:1px solid rgba(0,212,255,0.08);
+  position:sticky;top:0;z-index:100;
+  background:rgba(5,7,15,0.9);backdrop-filter:blur(20px);
+}
+.nav-logo{display:flex;align-items:center;gap:12px;}
+.nav-hex{
+  width:32px;height:32px;
+  background:linear-gradient(135deg,rgba(0,255,136,0.2),rgba(0,212,255,0.1));
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.nav-name{font-size:18px;font-weight:800;letter-spacing:3px;}
+.nav-name span{color:var(--g);}
+.nav-links{display:flex;gap:32px;font-family:var(--mono);font-size:11px;color:var(--muted);}
+.nav-links a{color:inherit;text-decoration:none;transition:.2s;}
+.nav-links a:hover{color:var(--text);}
+.nav-cta{
+  padding:9px 24px;background:rgba(0,255,136,0.1);
+  border:1px solid rgba(0,255,136,0.3);border-radius:6px;
+  font-family:var(--mono);font-size:11px;color:var(--g);
+  cursor:pointer;transition:.2s;text-decoration:none;letter-spacing:1px;
+}
+.nav-cta:hover{background:rgba(0,255,136,0.18);box-shadow:0 0 20px rgba(0,255,136,0.12);}
+
+/* HERO */
+.hero{
+  min-height:90vh;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:80px 40px;position:relative;z-index:1;
+  overflow:hidden;
+}
+.hero-glow{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);
+  width:800px;height:600px;
+  background:radial-gradient(ellipse,rgba(0,255,136,0.06) 0%,rgba(0,212,255,0.03) 40%,transparent 70%);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 16px;border:1px solid rgba(0,255,136,0.25);
+  border-radius:20px;font-family:var(--mono);font-size:10px;
+  color:var(--g);margin-bottom:28px;letter-spacing:2px;
+  background:rgba(0,255,136,0.04);
+}
+.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--g);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+h1{
+  font-size:clamp(42px,6vw,88px);font-weight:800;
+  line-height:1.0;letter-spacing:-2px;margin-bottom:24px;
+}
+h1 .g{color:var(--g);}
+h1 .b{color:var(--b);}
+.hero-sub{
+  font-family:var(--mono);font-size:15px;color:var(--muted);
+  max-width:560px;margin:0 auto 44px;line-height:1.7;
+}
+.hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+.btn-primary{
+  padding:14px 36px;
+  background:linear-gradient(135deg,rgba(0,255,136,0.15),rgba(0,212,255,0.08));
+  border:1px solid rgba(0,255,136,0.4);border-radius:8px;
+  font-family:var(--mono);font-size:13px;font-weight:700;
+  color:var(--g);cursor:pointer;transition:.3s;letter-spacing:2px;
+  text-decoration:none;
+}
+.btn-primary:hover{box-shadow:0 0 40px rgba(0,255,136,0.15);transform:translateY(-1px);}
+.btn-secondary{
+  padding:14px 36px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;
+  font-family:var(--mono);font-size:13px;color:var(--muted);
+  cursor:pointer;transition:.3s;letter-spacing:1px;background:transparent;
+  text-decoration:none;
+}
+.btn-secondary:hover{border-color:rgba(255,255,255,0.2);color:var(--text);}
+
+/* STATS */
+.stats-bar{
+  display:flex;justify-content:center;gap:60px;
+  padding:32px 60px;border-top:1px solid rgba(0,212,255,0.06);
+  border-bottom:1px solid rgba(0,212,255,0.06);
+  position:relative;z-index:1;flex-wrap:wrap;
+}
+.stat{text-align:center;}
+.stat-val{font-size:32px;font-weight:800;color:var(--g);}
+.stat-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:4px;}
+
+/* FEATURES */
+section{padding:80px 60px;position:relative;z-index:1;}
+.section-tag{
+  font-family:var(--mono);font-size:10px;color:var(--b);
+  letter-spacing:3px;margin-bottom:12px;text-transform:uppercase;
+}
+.section-title{font-size:36px;font-weight:800;margin-bottom:16px;}
+.section-sub{font-family:var(--mono);font-size:12px;color:var(--muted);max-width:500px;line-height:1.7;margin-bottom:48px;}
+
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+.feature-card{
+  padding:24px;background:var(--bg1);
+  border:1px solid rgba(0,212,255,0.06);border-radius:10px;
+  transition:.3s;
+}
+.feature-card:hover{border-color:rgba(0,212,255,0.15);transform:translateY(-2px);}
+.feature-icon{font-size:28px;margin-bottom:14px;}
+.feature-name{font-size:15px;font-weight:700;margin-bottom:8px;}
+.feature-desc{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.6;}
+.feature-tag{
+  display:inline-block;margin-top:10px;
+  font-family:var(--mono);font-size:9px;padding:2px 8px;
+  border-radius:3px;border:1px solid;letter-spacing:1px;
+}
+.tag-free{color:var(--g);border-color:rgba(0,255,136,0.3);}
+.tag-pro{color:var(--b);border-color:rgba(0,212,255,0.3);}
+
+/* PIPELINE PREVIEW */
+.pipeline-preview{
+  background:var(--bg1);border:1px solid rgba(0,212,255,0.1);
+  border-radius:12px;overflow:hidden;
+}
+.preview-top{
+  padding:14px 20px;border-bottom:1px solid rgba(0,212,255,0.08);
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+  display:flex;align-items:center;gap:8px;
+}
+.dot-r{width:10px;height:10px;border-radius:50%;background:#ff5f57;}
+.dot-y{width:10px;height:10px;border-radius:50%;background:#febc2e;}
+.dot-g{width:10px;height:10px;border-radius:50%;background:#28c840;}
+.preview-body{padding:20px;display:grid;gap:6px;}
+.preview-row{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 14px;background:var(--bg2);border-radius:6px;
+  font-family:var(--mono);font-size:11px;
+}
+.p-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.p-name{color:var(--text);flex:1;}
+.p-status{font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid;letter-spacing:1px;}
+
+/* GRAPH PREVIEW */
+.graph-visual{
+  background:var(--bg1);border:1px solid rgba(0,212,255,0.1);
+  border-radius:12px;padding:32px;text-align:center;
+  min-height:280px;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.graph-bg{
+  position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 50%, rgba(0,212,255,0.04) 0%, transparent 60%);
+}
+
+/* CTA SECTION */
+.cta-section{
+  text-align:center;padding:80px 40px;
+  background:linear-gradient(135deg,rgba(0,255,136,0.03),rgba(0,212,255,0.02));
+  border-top:1px solid rgba(0,255,136,0.08);
+  border-bottom:1px solid rgba(0,255,136,0.08);
+}
+
+/* FOOTER */
+footer{
+  padding:32px 60px;display:flex;justify-content:space-between;align-items:center;
+  font-family:var(--mono);font-size:10px;color:var(--muted);
+  border-top:1px solid rgba(0,212,255,0.06);
+  position:relative;z-index:1;flex-wrap:wrap;gap:12px;
+}
+
+/* Animated terminals in hero */
+.terminal-wrap{
+  margin-top:60px;
+  background:rgba(8,12,24,0.8);border:1px solid rgba(0,255,136,0.15);
+  border-radius:10px;padding:20px 24px;text-align:left;
+  font-family:var(--mono);font-size:12px;
+  max-width:600px;margin-left:auto;margin-right:auto;
+  position:relative;overflow:hidden;
+}
+.terminal-wrap::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--g),var(--b),transparent);
+}
+.t-line{margin:3px 0;color:var(--muted);}
+.t-line .g{color:var(--g);}
+.t-line .b{color:var(--b);}
+.t-line .r{color:var(--r);}
+.t-line .o{color:var(--o);}
+.t-cursor{display:inline-block;width:8px;height:12px;background:var(--g);animation:blink 1s infinite;vertical-align:middle;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="nav-hex">⬡</div>
+    <div class="nav-name">NEX<span>US</span></div>
+  </div>
+  <div class="nav-links">
+    <a href="#features">Fonctionnalités</a>
+    <a href="#agents">Agents</a>
+    <a href="#pricing">Tarifs</a>
+  </div>
+  <a href="/app" class="nav-cta">ACCÉDER À LA PLATEFORME →</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div>
+    <div class="hero-badge">● PLATEFORME OSINT PROFESSIONNELLE</div>
+    <h1>Intelligence<br><span class="g">ouverte</span>.<br><span class="b">automatisée</span>.</h1>
+    <p class="hero-sub">
+      Pipeline multi-agents en temps réel. Due diligence, compliance, investigation —
+      un formulaire, tout s'enchaîne automatiquement.
+    </p>
+    <div class="hero-cta">
+      <a href="/app" class="btn-primary">⬡ LANCER UNE INVESTIGATION</a>
+      <a href="#features" class="btn-secondary">Voir les fonctionnalités</a>
+    </div>
+
+    <div class="terminal-wrap">
+      <div class="t-line"><span class="g">nexus</span> ❯ investigate --target "Wirecard AG" --depth deep</div>
+      <div class="t-line"><span class="b">→</span> Agent Sirene         <span class="g">✓ OK</span></div>
+      <div class="t-line"><span class="b">→</span> Agent Bodacc         <span class="r">⚠ 3 procédures détectées</span></div>
+      <div class="t-line"><span class="b">→</span> Agent OpenSanctions  <span class="r">🔴 PRÉSENT SUR 12 LISTES</span></div>
+      <div class="t-line"><span class="b">→</span> Agent Google News    <span class="r">🔴 47 articles négatifs</span></div>
+      <div class="t-line"><span class="b">→</span> Agent IA Final       <span class="g">✓ Rapport généré</span></div>
+      <div class="t-line"><span class="o">Score de risque: 97/100 — CRITIQUE</span> <span class="t-cursor"></span></div>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-val">8+</div><div class="stat-label">Agents parallèles</div></div>
+  <div class="stat"><div class="stat-val">330</div><div class="stat-label">Listes sanctions</div></div>
+  <div class="stat"><div class="stat-val">100%</div><div class="stat-label">Sources gratuites</div></div>
+  <div class="stat"><div class="stat-val">&lt;3min</div><div class="stat-label">Rapport complet</div></div>
+</div>
+
+<section id="features">
+  <div class="section-tag">Fonctionnalités</div>
+  <div class="section-title">Tout ce dont vous avez besoin</div>
+  <p class="section-sub">Un pipeline OSINT complet, de l'intake au rapport PDF, entièrement automatisé.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📋</div>
+      <div class="feature-name">Formulaire d'intake complet</div>
+      <div class="feature-desc">Renseignez une fois : cible, SIREN, domaine, wallet crypto, contexte, profondeur. Tout se lance automatiquement.</div>
+      <span class="feature-tag tag-free">GRATUIT</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-name">Pipeline parallèle</div>
+      <div class="feature-desc">8+ agents s'exécutent simultanément via SSE streaming. Résultats en temps réel, aucune attente inutile.</div>
+      <span class="feature-tag tag-free">GRATUIT</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🕸️</div>
+      <div class="feature-name">Graphe relationnel avancé</div>
+      <div class="feature-desc">Visualisation Cytoscape.js avec nœuds typés, clustering, expand on click. Double-clic = sous-pipeline automatique sur un nœud.</div>
+      <span class="feature-tag tag-free">GRATUIT</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <div class="feature-name">Rapport IA — LLaMA 3.3 70B</div>
+      <div class="feature-desc">Synthèse Groq avec scoring de risque, alertes critiques, signaux faibles et recommandations actionnables.</div>
+      <span class="feature-tag tag-free">GROQ GRATUIT</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚖️</div>
+      <div class="feature-name">330 listes de sanctions</div>
+      <div class="feature-desc">OpenSanctions — OFAC, ONU, UE, Interpol et 326 autres listes mondiales. Vérification en quelques secondes.</div>
+      <span class="feature-tag tag-free">GRATUIT</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">₿</div>
+      <div class="feature-name">Analyse crypto</div>
+      <div class="feature-desc">Suivi wallets BTC/ETH, balance, historique transactions, vérification sanctions wallets.</div>
+      <span class="feature-tag tag-free">GRATUIT</span>
+    </div>
+  </div>
+</section>
+
+<section id="agents" style="background:var(--bg1);border-top:1px solid rgba(0,212,255,0.06);border-bottom:1px solid rgba(0,212,255,0.06);">
+  <div class="section-tag">Agents OSINT</div>
+  <div class="section-title">Pipeline d'agents</div>
+
+  <div class="pipeline-preview">
+    <div class="preview-top">
+      <div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>
+      <span style="margin-left:8px">nexus-pipeline — investigation en cours</span>
+    </div>
+    <div class="preview-body">
+      <div class="preview-row"><div class="p-dot" style="background:#00ff88"></div><span class="p-name">INSEE Sirene — Registre officiel FR (gratuit)</span><span class="p-status" style="color:#00ff88;border-color:rgba(0,255,136,0.3)">OK</span></div>
+      <div class="preview-row"><div class="p-dot" style="background:#ff8c00"></div><span class="p-name">Bodacc — Procédures légales & faillites</span><span class="p-status" style="color:#ff8c00;border-color:rgba(255,140,0,0.3)">ALERTE</span></div>
+      <div class="preview-row"><div class="p-dot" style="background:#ff3355"></div><span class="p-name">OpenSanctions — 330 listes mondiales</span><span class="p-status" style="color:#ff3355;border-color:rgba(255,51,85,0.3)">CRITIQUE</span></div>
+      <div class="preview-row"><div class="p-dot" style="background:#00ff88"></div><span class="p-name">Google News — Presse FR + EN + négatif scan</span><span class="p-status" style="color:#00ff88;border-color:rgba(0,255,136,0.3)">OK</span></div>
+      <div class="preview-row"><div class="p-dot" style="background:#00d4ff"></div><span class="p-name">WHOIS/RDAP — Domaine & infrastructure</span><span class="p-status" style="color:#00d4ff;border-color:rgba(0,212,255,0.3)">OK</span></div>
+      <div class="preview-row"><div class="p-dot" style="background:#a78bfa"></div><span class="p-name">Vérificateur IA — Croisement & scoring</span><span class="p-status" style="color:#a78bfa;border-color:rgba(167,139,250,0.3)">OK</span></div>
+      <div class="preview-row"><div class="p-dot" style="background:#00ff88"></div><span class="p-name">Agent IA Final — Groq LLaMA 3.3 70B</span><span class="p-status" style="color:#00ff88;border-color:rgba(0,255,136,0.3)">OK</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="section-tag" style="justify-content:center;display:flex">Commencer</div>
+  <h2 style="font-size:42px;font-weight:800;margin-bottom:16px;">Prêt à investiguer ?</h2>
+  <p style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:36px;">
+    Déployez en local. Aucun abonnement requis pour le MVP.
+  </p>
+  <a href="/app" class="btn-primary">⬡ LANCER L'APPLICATION →</a>
+</section>
+
+<footer>
+  <div>NEXUS Intelligence Platform v2.0</div>
+  <div style="display:flex;gap:20px;">
+    <span>Flask + Groq + Cytoscape.js</span>
+    <span>Sources: Sirene · Bodacc · OpenSanctions · Google News</span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Admin Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05070f;--bg1:#080c18;--bg2:#0d1225;--bg3:#121a35;
+  --border:rgba(0,212,255,0.08);--border2:rgba(0,212,255,0.18);
+  --g:#00ff88;--b:#00d4ff;--p:#a78bfa;--r:#ff3355;--o:#ff8c00;--y:#fbbf24;
+  --text:#e2eaff;--muted:#4a5880;
+  --mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;}
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,212,255,0.015) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,212,255,0.015) 1px,transparent 1px);
+  background-size:64px 64px;pointer-events:none;z-index:0;
+}
+
+/* ── LAYOUT ── */
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh;position:relative;z-index:1;}
+
+/* ── NAV ── */
+.nav{
+  background:var(--bg1);border-right:1px solid var(--border2);
+  padding:20px 0;display:flex;flex-direction:column;gap:2px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.nav-logo{
+  padding:8px 20px 20px;
+  font-family:var(--mono);font-size:16px;font-weight:700;
+  letter-spacing:3px;color:#fff;border-bottom:1px solid var(--border);
+  margin-bottom:8px;
+}
+.nav-logo span{color:var(--g);}
+.nav-section{
+  font-family:var(--mono);font-size:8px;color:var(--muted);
+  letter-spacing:3px;padding:12px 20px 4px;text-transform:uppercase;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 20px;cursor:pointer;
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+  transition:.15s;border-left:2px solid transparent;
+}
+.nav-item:hover{color:var(--text);background:rgba(0,212,255,0.04);}
+.nav-item.active{color:var(--b);border-left-color:var(--b);background:rgba(0,212,255,0.06);}
+.nav-item .icon{font-size:13px;width:16px;text-align:center;}
+.nav-badge{
+  margin-left:auto;font-size:9px;padding:1px 6px;
+  border-radius:3px;background:rgba(255,51,85,0.15);
+  color:var(--r);border:1px solid rgba(255,51,85,0.2);
+}
+.nav-badge.ok{background:rgba(0,255,136,0.1);color:var(--g);border-color:rgba(0,255,136,0.2);}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;overflow:hidden;}
+.top-bar{
+  padding:16px 32px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(5,7,15,0.9);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:10;
+}
+.page-title{font-size:16px;font-weight:700;}
+.top-actions{display:flex;gap:10px;align-items:center;}
+
+/* ── PANELS ── */
+.panel{display:none;padding:28px 32px;flex:1;overflow-y:auto;}
+.panel.active{display:block;}
+
+/* ── CARDS ── */
+.card{
+  background:var(--bg1);border:1px solid var(--border);
+  border-radius:10px;padding:20px;margin-bottom:16px;
+}
+.card-title{
+  font-size:13px;font-weight:700;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-title .ct-icon{font-size:16px;}
+
+/* ── STATUS GRID ── */
+.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
+.stat-card{
+  background:var(--bg1);border:1px solid var(--border);
+  border-radius:8px;padding:16px;
+}
+.stat-val{font-size:28px;font-weight:800;margin-bottom:4px;}
+.stat-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px;}
+
+/* ── TOOLS TABLE ── */
+.tools-table{width:100%;border-collapse:collapse;}
+.tools-table th{
+  font-family:var(--mono);font-size:9px;color:var(--muted);
+  letter-spacing:2px;text-align:left;padding:8px 12px;
+  border-bottom:1px solid var(--border);text-transform:uppercase;
+}
+.tools-table td{
+  padding:10px 12px;border-bottom:1px solid var(--border);
+  font-family:var(--mono);font-size:11px;vertical-align:middle;
+}
+.tools-table tr:hover td{background:rgba(0,212,255,0.02);}
+
+.pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:3px;font-size:9px;
+  font-weight:700;letter-spacing:1px;border:1px solid;
+}
+.pill-ok{color:var(--g);border-color:rgba(0,255,136,0.3);background:rgba(0,255,136,0.08);}
+.pill-no{color:var(--muted);border-color:rgba(255,255,255,0.08);background:transparent;}
+.pill-err{color:var(--r);border-color:rgba(255,51,85,0.3);background:rgba(255,51,85,0.08);}
+.pill-warn{color:var(--o);border-color:rgba(255,140,0,0.3);background:rgba(255,140,0,0.08);}
+
+/* ── API KEYS FORM ── */
+.keys-grid{display:grid;gap:12px;}
+.key-row{
+  display:grid;grid-template-columns:160px 1fr auto auto;
+  align-items:center;gap:12px;
+  padding:12px 16px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+}
+.key-name{font-size:12px;font-weight:600;}
+.key-sub{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px;}
+.key-input{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:6px;padding:8px 12px;
+  color:var(--text);font-family:var(--mono);font-size:11px;
+  outline:none;width:100%;transition:.2s;
+}
+.key-input:focus{border-color:var(--b);}
+.btn-test{
+  padding:7px 14px;border-radius:6px;cursor:pointer;
+  font-family:var(--mono);font-size:10px;font-weight:700;
+  background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);
+  color:var(--b);transition:.2s;white-space:nowrap;
+}
+.btn-test:hover{background:rgba(0,212,255,0.15);}
+.btn-save{
+  padding:7px 14px;border-radius:6px;cursor:pointer;
+  font-family:var(--mono);font-size:10px;font-weight:700;
+  background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.2);
+  color:var(--g);transition:.2s;white-space:nowrap;
+}
+.btn-save:hover{background:rgba(0,255,136,0.18);}
+
+/* ── LOGS ── */
+.log-stream{
+  background:#030508;border:1px solid var(--border);
+  border-radius:8px;padding:16px;
+  font-family:var(--mono);font-size:11px;line-height:1.7;
+  height:420px;overflow-y:auto;
+  white-space:pre-wrap;word-break:break-all;
+}
+.log-stream::-webkit-scrollbar{width:3px;}
+.log-stream::-webkit-scrollbar-thumb{background:var(--bg3);}
+
+.log-info  {color:var(--b);}
+.log-ok    {color:var(--g);}
+.log-warn  {color:var(--o);}
+.log-error {color:var(--r);}
+.log-agent {color:var(--p);}
+.log-time  {color:var(--muted);}
+
+/* ── TEST AGENT ── */
+.test-wrap{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.test-wrap select,.test-wrap input{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:6px;padding:8px 12px;
+  color:var(--text);font-family:var(--mono);font-size:11px;
+  outline:none;
+}
+.test-wrap select{width:180px;}
+.test-wrap input{flex:1;min-width:200px;}
+
+/* ── INSTALL COMMANDS ── */
+.install-box{
+  background:#030508;border:1px solid var(--border);
+  border-radius:8px;padding:16px;
+  font-family:var(--mono);font-size:11px;line-height:2;
+}
+.install-line{display:flex;align-items:center;gap:12px;padding:4px 0;}
+.install-line .tool-status{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.install-line .cmd{color:var(--g);}
+.install-line .installed{color:var(--muted);font-size:9px;}
+.copy-btn{
+  margin-left:auto;padding:2px 8px;font-size:9px;
+  background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.15);
+  color:var(--b);border-radius:3px;cursor:pointer;font-family:var(--mono);
+}
+.copy-btn:hover{background:rgba(0,212,255,0.15);}
+
+/* ── INVESTIGATION HISTORY ── */
+.history-table{width:100%;border-collapse:collapse;}
+.history-table th{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);text-transform:uppercase;}
+.history-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;}
+.history-table tr:hover td{background:rgba(0,212,255,0.02);cursor:pointer;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px;}
+
+/* ── OVERVIEW PIPELINE PREVIEW ── */
+.pipeline-status{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;}
+.pipeline-block{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:12px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.pb-name{font-size:12px;font-weight:600;}
+.pb-desc{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.pb-status{font-family:var(--mono);font-size:9px;margin-top:4px;}
+
+.btn{
+  padding:8px 18px;border-radius:6px;cursor:pointer;
+  font-family:var(--mono);font-size:10px;font-weight:700;
+  border:1px solid;transition:.2s;letter-spacing:1px;
+}
+.btn-primary{background:rgba(0,255,136,0.1);border-color:rgba(0,255,136,0.3);color:var(--g);}
+.btn-primary:hover{background:rgba(0,255,136,0.18);}
+.btn-danger{background:rgba(255,51,85,0.08);border-color:rgba(255,51,85,0.25);color:var(--r);}
+.btn-neutral{background:rgba(0,212,255,0.06);border-color:rgba(0,212,255,0.15);color:var(--b);}
+
+/* Notification toast */
+#toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  padding:10px 20px;border-radius:8px;
+  font-family:var(--mono);font-size:11px;
+  background:var(--bg1);border:1px solid var(--g);color:var(--g);
+  opacity:0;transform:translateY(10px);
+  transition:.3s;pointer-events:none;
+}
+#toast.show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── NAV ── -->
+  <nav class="nav">
+    <div class="nav-logo">NEX<span>US</span></div>
+
+    <div class="nav-section">Console</div>
+    <div class="nav-item active" onclick="goto('overview')">
+      <span class="icon">⬡</span> Vue d'ensemble
+    </div>
+    <div class="nav-item" onclick="goto('keys')">
+      <span class="icon">🔑</span> Clés API
+      <span class="nav-badge" id="keys-badge">-</span>
+    </div>
+    <div class="nav-item" onclick="goto('tools')">
+      <span class="icon">🛠️</span> Outils CLI
+      <span class="nav-badge" id="tools-badge">-</span>
+    </div>
+    <div class="nav-item" onclick="goto('test')">
+      <span class="icon">⚡</span> Tester un agent
+    </div>
+
+    <div class="nav-section">Monitoring</div>
+    <div class="nav-item" onclick="goto('logs')">
+      <span class="icon">📟</span> Logs live
+    </div>
+    <div class="nav-item" onclick="goto('history')">
+      <span class="icon">📁</span> Investigations
+    </div>
+
+    <div class="nav-section">Installation</div>
+    <div class="nav-item" onclick="goto('install')">
+      <span class="icon">📦</span> Guide install
+    </div>
+
+    <div style="margin-top:auto;padding:16px 20px;border-top:1px solid var(--border);">
+      <a href="/app" style="font-family:var(--mono);font-size:10px;color:var(--muted);text-decoration:none;">
+        ← Retour à l'app
+      </a>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+    <div class="top-bar">
+      <div class="page-title" id="pageTitle">Vue d'ensemble</div>
+      <div class="top-actions">
+        <button class="btn btn-neutral" onclick="refreshAll()">↺ Actualiser</button>
+        <button class="btn btn-primary" onclick="window.location='/app'">+ Nouvelle investigation</button>
+      </div>
+    </div>
+
+    <!-- ── OVERVIEW ── -->
+    <div class="panel active" id="panel-overview">
+      <div class="status-grid" id="overviewStats">
+        <div class="stat-card"><div class="stat-val g" id="ov-investigations">—</div><div class="stat-label">Investigations</div></div>
+        <div class="stat-card"><div class="stat-val" id="ov-keys" style="color:var(--y)">—</div><div class="stat-label">Clés valides</div></div>
+        <div class="stat-card"><div class="stat-val" id="ov-tools" style="color:var(--b)">—</div><div class="stat-label">Outils installés</div></div>
+        <div class="stat-card"><div class="stat-val" id="ov-agents" style="color:var(--p)">—</div><div class="stat-label">Agents actifs</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="ct-icon">🔌</span> Statut des agents</div>
+        <div class="pipeline-status" id="pipelineStatus">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--muted)">Chargement...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="ct-icon">⚠️</span> Alertes & Actions requises</div>
+        <div id="overviewAlerts" style="font-family:var(--mono);font-size:11px;color:var(--muted)">Chargement...</div>
+      </div>
+    </div>
+
+    <!-- ── CLÉS API ── -->
+    <div class="panel" id="panel-keys">
+      <div class="card">
+        <div class="card-title"><span class="ct-icon">🔑</span> Gestion des clés API</div>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:20px;">
+          Les clés sont sauvegardées dans votre fichier <code style="color:var(--b)">.env</code> local.
+        </p>
+        <div class="keys-grid" id="keysGrid">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--muted)">Chargement...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── OUTILS CLI ── -->
+    <div class="panel" id="panel-tools">
+      <div class="card">
+        <div class="card-title"><span class="ct-icon">🛠️</span> Outils open-source disponibles</div>
+        <table class="tools-table" id="toolsTable">
+          <thead>
+            <tr>
+              <th>Outil</th><th>Description</th><th>Type cible</th>
+              <th>Statut</th><th>Version</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="toolsTbody">
+            <tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px;">Chargement...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── TESTER UN AGENT ── -->
+    <div class="panel" id="panel-test">
+      <div class="card">
+        <div class="card-title"><span class="ct-icon">⚡</span> Tester un agent en isolation</div>
+        <div class="test-wrap">
+          <select id="testAgent">
+            <option value="sirene">Sirene</option>
+            <option value="bodacc">Bodacc</option>
+            <option value="pappers">Pappers</option>
+            <option value="opensanctions">OpenSanctions</option>
+            <option value="news">Google News</option>
+            <option value="whois">WHOIS/RDAP</option>
+            <option value="theharvester">theHarvester</option>
+            <option value="sherlock">Sherlock</option>
+            <option value="holehe">Holehe</option>
+          </select>
+          <input type="text" id="testQuery" value="TotalEnergies" placeholder="Cible de test">
+          <button class="btn btn-primary" onclick="runAgentTest()">▶ TESTER</button>
+        </div>
+
+        <div class="log-stream" id="testOutput">
+          <span class="log-time">// Sélectionnez un agent et lancez le test</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LOGS LIVE ── -->
+    <div class="panel" id="panel-logs">
+      <div class="card">
+        <div class="card-title">
+          <span class="ct-icon">📟</span> Logs en temps réel
+          <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="btn btn-neutral" onclick="clearLogs()">🗑 Effacer</button>
+            <button class="btn btn-danger" onclick="togglePauseLogs()" id="btnPauseLogs">⏸ Pause</button>
+          </div>
+        </div>
+        <div class="log-stream" id="logStream">
+          <span class="log-time">// Logs des investigations en cours...\n</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HISTORY ── -->
+    <div class="panel" id="panel-history">
+      <div class="card">
+        <div class="card-title"><span class="ct-icon">📁</span> Historique des investigations</div>
+        <table class="history-table">
+          <thead>
+            <tr><th>ID</th><th>Cible</th><th>Type</th><th>Score risque</th><th>Alertes</th><th>Durée</th><th>Date</th><th></th></tr>
+          </thead>
+          <tbody id="historyTbody">
+            <tr><td colspan="8" style="color:var(--muted);text-align:center;padding:24px;">Aucune investigation</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── INSTALL GUIDE ── -->
+    <div class="panel" id="panel-install">
+      <div class="card">
+        <div class="card-title"><span class="ct-icon">📦</span> Installation des outils</div>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:16px;">
+          Commandes pour installer tous les outils open-source. Copier-coller dans votre terminal.
+        </p>
+        <div class="install-box" id="installBox">Chargement...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="ct-icon">🐍</span> Installation complète en une commande</div>
+        <div class="install-box">
+          <div class="install-line">
+            <span style="color:var(--muted)"># Tout installer d'un coup (Python 3.11)</span>
+          </div>
+          <div class="install-line">
+            <span class="cmd">py -3.11 -m pip install theHarvester sherlock-project holehe spiderfoot dnsrecon wafw00f sublist3r</span>
+            <button class="copy-btn" onclick="copyCmd('py -3.11 -m pip install theHarvester sherlock-project holehe spiderfoot dnsrecon wafw00f sublist3r')">copier</button>
+          </div>
+          <div class="install-line" style="margin-top:8px;">
+            <span style="color:var(--muted)"># Démarrer SpiderFoot (dans un terminal séparé)</span>
+          </div>
+          <div class="install-line">
+            <span class="cmd">py -3.11 -m spiderfoot -l 127.0.0.1:5001</span>
+            <button class="copy-btn" onclick="copyCmd('py -3.11 -m spiderfoot -l 127.0.0.1:5001')">copier</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="ct-icon">🔑</span> Clés API gratuites — liens d'inscription</div>
+        <div class="install-box">
+          <div class="install-line"><span style="color:var(--b)">Groq (requis)</span><span style="color:var(--muted);margin-left:12px;">→</span><span class="cmd" style="margin-left:8px;">https://console.groq.com/keys</span></div>
+          <div class="install-line"><span style="color:var(--b)">OpenSanctions</span><span style="color:var(--muted);margin-left:12px;">→</span><span class="cmd" style="margin-left:8px;">https://www.opensanctions.org/api/</span></div>
+          <div class="install-line"><span style="color:var(--b)">Pappers</span><span style="color:var(--muted);margin-left:12px;">→</span><span class="cmd" style="margin-left:8px;">https://www.pappers.fr/api</span></div>
+          <div class="install-line"><span style="color:var(--b)">Shodan</span><span style="color:var(--muted);margin-left:12px;">→</span><span class="cmd" style="margin-left:8px;">https://account.shodan.io/register</span></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let toolsData = {};
+let keysData  = {};
+let logsPaused = false;
+let logPollInterval = null;
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────
+const titles = {
+  overview: 'Vue d\'ensemble', keys: 'Clés API', tools: 'Outils CLI',
+  test: 'Tester un agent', logs: 'Logs live', history: 'Investigations',
+  install: 'Guide installation'
+};
+function goto(page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${page}`).classList.add('active');
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+  if (page === 'keys')    loadKeys();
+  if (page === 'tools')   loadTools();
+  if (page === 'logs')    startLogPolling();
+  if (page === 'history') loadHistory();
+  if (page === 'install') loadInstall();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+async function init() {
+  await loadOverview();
+}
+
+async function refreshAll() {
+  await loadOverview();
+  toast('Actualisé ✓');
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────
+async function loadOverview() {
+  try {
+    const [statusRes, toolsRes] = await Promise.all([
+      fetch('/api/status').then(r => r.json()),
+      fetch('/api/admin/tools').then(r => r.json()),
+    ]);
+
+    toolsData = toolsRes;
+    const keys = toolsRes.api_keys || {};
+    const tools = toolsRes.cli_tools || {};
+
+    const validKeys  = Object.values(keys).filter(k => k.valid).length;
+    const totalKeys  = Object.values(keys).length;
+    const installedTools = Object.values(tools).filter(t => t.installed).length;
+    const totalTools = Object.values(tools).length;
+
+    document.getElementById('ov-investigations').textContent = statusRes.investigations_count || 0;
+    document.getElementById('ov-keys').textContent  = `${validKeys}/${totalKeys}`;
+    document.getElementById('ov-tools').textContent = `${installedTools}/${totalTools}`;
+    document.getElementById('ov-agents').textContent = Object.keys(statusRes.keys || {}).length + 4;
+
+    // Badges nav
+    const missingKeys = Object.values(keys).filter(k => k.required && !k.valid).length;
+    const kb = document.getElementById('keys-badge');
+    kb.textContent = missingKeys > 0 ? `${missingKeys} manq.` : '✓';
+    kb.className = `nav-badge ${missingKeys === 0 ? 'ok' : ''}`;
+
+    const missingTools = Object.values(tools).filter(t => !t.installed).length;
+    const tb = document.getElementById('tools-badge');
+    tb.textContent = `${installedTools}/${totalTools}`;
+    tb.className = `nav-badge ${installedTools === totalTools ? 'ok' : ''}`;
+
+    // Pipeline status blocks
+    const agents = [
+      {id:'sirene',     name:'Sirene',        icon:'🏛️', key:null},
+      {id:'bodacc',     name:'Bodacc',         icon:'📋', key:null},
+      {id:'opensanctions',name:'OpenSanctions',icon:'⚖️', key:'opensanctions'},
+      {id:'pappers',    name:'Pappers',        icon:'🇫🇷', key:'pappers'},
+      {id:'news',       name:'Google News',    icon:'📰', key:null},
+      {id:'whois',      name:'WHOIS/RDAP',     icon:'🌐', key:null},
+      {id:'theharvester',name:'theHarvester',  icon:'🌱', tool:'theharvester'},
+      {id:'sherlock',   name:'Sherlock',       icon:'🔍', tool:'sherlock'},
+      {id:'holehe',     name:'Holehe',         icon:'📧', tool:'holehe'},
+      {id:'spiderfoot', name:'SpiderFoot',     icon:'🕷️', tool:'spiderfoot'},
+      {id:'groq',       name:'Groq IA',        icon:'🤖', key:'groq'},
+    ];
+
+    const ps = document.getElementById('pipelineStatus');
+    ps.innerHTML = agents.map(a => {
+      let status = 'ok';
+      let statusText = 'Actif';
+      let statusColor = 'var(--g)';
+
+      if (a.key) {
+        const k = keys[a.key];
+        if (!k || !k.valid) { status='warn'; statusText = k?.set ? 'Clé invalide' : 'Clé manquante'; statusColor='var(--o)'; }
+      }
+      if (a.tool) {
+        const t = tools[a.tool];
+        if (!t || !t.installed) { status='no'; statusText='Non installé'; statusColor='var(--muted)'; }
+      }
+
+      return `
+        <div class="pipeline-block">
+          <div class="pb-name">${a.icon} ${a.name}</div>
+          <div class="pb-status" style="color:${statusColor}">● ${statusText}</div>
+        </div>
+      `;
+    }).join('');
+
+    // Alertes
+    const alerts = [];
+    if (!keys.groq?.valid) alerts.push({level:'error', msg:'GROQ_API_KEY manquante — rapport IA désactivé'});
+    if (!keys.pappers?.set) alerts.push({level:'warn', msg:'Pappers non configuré — données dirigeants limitées'});
+    if (!keys.opensanctions?.set) alerts.push({level:'warn', msg:'OpenSanctions sans clé — résultats partiels'});
+    Object.entries(tools).forEach(([name, t]) => {
+      if (!t.installed) alerts.push({level:'info', msg:`${name} non installé — pip install ${name}`});
+    });
+
+    const al = document.getElementById('overviewAlerts');
+    al.innerHTML = alerts.length === 0
+      ? '<span style="color:var(--g)">✅ Tout est correctement configuré</span>'
+      : alerts.map(a => `
+          <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;font-family:var(--mono);font-size:11px;">
+            <span style="color:${a.level==='error'?'var(--r)':a.level==='warn'?'var(--o)':'var(--muted)'}">
+              ${a.level==='error'?'🔴':a.level==='warn'?'🟡':'○'}
+            </span>
+            <span style="color:${a.level==='error'?'#fca5a5':a.level==='warn'?'#fed7aa':'var(--muted)'}">
+              ${a.msg}
+            </span>
+          </div>
+        `).join('');
+
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+// ── KEYS ──────────────────────────────────────────────────────────────────
+const KEY_DEFS = [
+  { id:'GROQ_API_KEY',           label:'Groq',          sub:'Requis — LLaMA 3.3 70B',       link:'https://console.groq.com/keys',          required:true },
+  { id:'PAPPERS_API_KEY',        label:'Pappers',       sub:'Optionnel — dirigeants enrichis',link:'https://www.pappers.fr/api',             required:false },
+  { id:'OPENSANCTIONS_API_KEY',  label:'OpenSanctions', sub:'Optionnel — 330 listes',         link:'https://www.opensanctions.org/api/',     required:false },
+  { id:'SHODAN_API_KEY',         label:'Shodan',        sub:'Optionnel — scan infra',          link:'https://account.shodan.io',             required:false },
+  { id:'SPIDERFOOT_URL',         label:'SpiderFoot URL',sub:'Optionnel — instance SF',         link:'https://github.com/smicallef/spiderfoot',required:false },
+];
+
+async function loadKeys() {
+  const data = toolsData.api_keys || await fetch('/api/admin/tools').then(r=>r.json()).then(d=>d.api_keys||{});
+  keysData = data;
+  const grid = document.getElementById('keysGrid');
+  grid.innerHTML = KEY_DEFS.map(k => {
+    const keyId = k.id.toLowerCase().replace(/_api_key/,'').replace(/_url/,'');
+    const status = data[keyId] || {};
+    const isValid = status.valid;
+    const isSet = status.set;
+    const pillClass = isValid ? 'pill-ok' : isSet ? 'pill-err' : 'pill-no';
+    const pillText = isValid ? 'VALIDE' : isSet ? 'INVALIDE' : 'MANQUANTE';
+    return `
+      <div class="key-row">
+        <div>
+          <div class="key-name">${k.label} ${k.required ? '<span style="color:var(--r);font-size:9px">*</span>' : ''}</div>
+          <div class="key-sub">${k.sub}</div>
+        </div>
+        <input type="password" class="key-input" id="key-${k.id}"
+          placeholder="${isSet ? '••••••••••••' : 'Entrer la clé...'}"
+          autocomplete="off">
+        <span class="pill ${pillClass}">${pillText}</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-test" onclick="testKey('${k.id}')">TEST</button>
+          <button class="btn-save" onclick="saveKey('${k.id}')">SAVE</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function testKey(keyId) {
+  const val = document.getElementById(`key-${keyId}`).value;
+  toast(`Test ${keyId}...`);
+  try {
+    const r = await fetch('/api/admin/test_key', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({key: keyId, value: val})
+    });
+    const d = await r.json();
+    toast(d.valid ? `✅ ${keyId} valide` : `❌ ${keyId} invalide`);
+  } catch(e) {
+    toast('Erreur test clé');
+  }
+}
+
+async function saveKey(keyId) {
+  const val = document.getElementById(`key-${keyId}`).value;
+  if (!val) return toast('Valeur vide');
+  try {
+    const r = await fetch('/api/admin/save_key', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({key: keyId, value: val})
+    });
+    const d = await r.json();
+    toast(d.ok ? `✅ ${keyId} sauvegardé dans .env` : `❌ Erreur: ${d.error}`);
+    if (d.ok) loadOverview();
+  } catch(e) {
+    toast('Erreur sauvegarde');
+  }
+}
+
+// ── TOOLS ─────────────────────────────────────────────────────────────────
+async function loadTools() {
+  const data = toolsData.cli_tools || await fetch('/api/admin/tools').then(r=>r.json()).then(d=>d.cli_tools||{});
+  const tbody = document.getElementById('toolsTbody');
+  tbody.innerHTML = Object.entries(data).map(([name, t]) => `
+    <tr>
+      <td style="font-weight:700">${name}</td>
+      <td style="color:var(--muted)">${t.desc || ''}</td>
+      <td><span class="pill pill-no" style="font-size:9px">${t.type || 'all'}</span></td>
+      <td>
+        <span class="pill ${t.installed ? 'pill-ok' : 'pill-no'}">
+          ${t.installed ? '✓ INSTALLÉ' : '✗ MANQUANT'}
+        </span>
+      </td>
+      <td style="color:var(--muted)">${t.version || '—'}</td>
+      <td>
+        ${!t.installed
+          ? `<button class="btn-test" onclick="copyCmd('py -3.11 -m pip install ${name}')">📋 Copier install</button>`
+          : `<button class="btn-test" onclick="setTestAgent('${name}')">⚡ Tester</button>`
+        }
+      </td>
+    </tr>
+  `).join('');
+}
+
+function setTestAgent(name) {
+  const sel = document.getElementById('testAgent');
+  if (sel) sel.value = name;
+  goto('test');
+}
+
+// ── TEST AGENT ────────────────────────────────────────────────────────────
+async function runAgentTest() {
+  const agent = document.getElementById('testAgent').value;
+  const query = document.getElementById('testQuery').value.trim() || 'TotalEnergies';
+  const out = document.getElementById('testOutput');
+
+  out.innerHTML = `<span class="log-time">[${ts()}]</span> <span class="log-info">Lancement test agent <strong>${agent}</strong> sur "${query}"...</span>\n`;
+
+  try {
+    const r = await fetch(`/api/admin/test_agent?agent=${agent}&query=${encodeURIComponent(query)}`);
+    const data = await r.json();
+
+    const statusColor = data.ok ? 'log-ok' : 'log-error';
+    out.innerHTML += `<span class="log-time">[${ts()}]</span> <span class="${statusColor}">Status: ${data.status || (data.ok ? 'OK' : 'ERREUR')}</span>\n`;
+
+    if (data.error) {
+      out.innerHTML += `<span class="log-error">Erreur: ${data.error}</span>\n`;
+    }
+    if (data.data_preview) {
+      out.innerHTML += `<span class="log-time">[DATA]</span> <span class="log-agent">${data.data_preview}</span>\n`;
+    }
+    if (data.logs) {
+      data.logs.forEach(l => {
+        const d = l.data || {};
+        out.innerHTML += `<span class="log-time">[${l.type}]</span> ${d.msg || JSON.stringify(d).slice(0,80)}\n`;
+      });
+    }
+    if (data.install) {
+      out.innerHTML += `\n<span class="log-warn">⚠️ Outil non installé: <strong>${data.install}</strong></span>\n`;
+    }
+    out.scrollTop = out.scrollHeight;
+  } catch(e) {
+    out.innerHTML += `<span class="log-error">Erreur: ${e.message}</span>\n`;
+  }
+}
+
+// ── LOGS ──────────────────────────────────────────────────────────────────
+function startLogPolling() {
+  if (logPollInterval) return;
+  logPollInterval = setInterval(pollLogs, 2000);
+}
+function clearLogs() {
+  document.getElementById('logStream').innerHTML = `<span class="log-time">// Logs effacés — ${new Date().toLocaleTimeString()}\n</span>`;
+}
+function togglePauseLogs() {
+  logsPaused = !logsPaused;
+  document.getElementById('btnPauseLogs').textContent = logsPaused ? '▶ Reprendre' : '⏸ Pause';
+}
+async function pollLogs() {
+  if (logsPaused) return;
+  try {
+    const r = await fetch('/api/admin/logs');
+    const data = await r.json();
+    if (data.entries && data.entries.length > 0) {
+      const stream = document.getElementById('logStream');
+      data.entries.forEach(entry => {
+        const cls = entry.level === 'error' ? 'log-error' : entry.level === 'warn' ? 'log-warn' : entry.level === 'ok' ? 'log-ok' : 'log-info';
+        stream.innerHTML += `<span class="log-time">[${entry.time}]</span> <span class="${cls}">${entry.msg}</span>\n`;
+      });
+      stream.scrollTop = stream.scrollHeight;
+    }
+  } catch(e) {}
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────────────
+async function loadHistory() {
+  try {
+    const r = await fetch('/api/investigations');
+    const data = await r.json();
+    const tbody = document.getElementById('historyTbody');
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:24px;">Aucune investigation</td></tr>';
+      return;
+    }
+    const {color} = score => ({color: score>=70?'var(--r)':score>=50?'var(--o)':score>=30?'var(--y)':'var(--g)'});
+    tbody.innerHTML = data.map(inv => `
+      <tr onclick="window.location='/report/${inv.id}'">
+        <td style="color:var(--b)">INV-${inv.id}</td>
+        <td style="font-weight:600">${inv.query || '?'}</td>
+        <td><span class="pill pill-no">${inv.target_type || '?'}</span></td>
+        <td style="color:${inv.risk_score>=70?'var(--r)':inv.risk_score>=50?'var(--o)':inv.risk_score>=30?'var(--y)':'var(--g)'}">
+          ${inv.risk_score || 0}/100
+        </td>
+        <td style="color:${inv.alerts?.length>0?'var(--r)':'var(--muted)'}">
+          ${inv.alerts?.length || 0}
+        </td>
+        <td style="color:var(--muted)">${inv.elapsed || 0}s</td>
+        <td style="color:var(--muted)">${inv.timestamp ? new Date(inv.timestamp).toLocaleString('fr-FR').slice(0,16) : '?'}</td>
+        <td><span style="color:var(--b)">→</span></td>
+      </tr>
+    `).join('');
+  } catch(e) {}
+}
+
+// ── INSTALL ───────────────────────────────────────────────────────────────
+async function loadInstall() {
+  const data = toolsData.cli_tools || await fetch('/api/admin/tools').then(r=>r.json()).then(d=>d.cli_tools||{});
+  const box = document.getElementById('installBox');
+  box.innerHTML = Object.entries(data).map(([name, t]) => `
+    <div class="install-line">
+      <div class="tool-status" style="background:${t.installed ? 'var(--g)' : 'var(--muted)'}"></div>
+      <span style="color:${t.installed ? 'var(--muted)' : 'var(--text)'}; min-width:120px">${name}</span>
+      ${t.installed
+        ? `<span class="installed">v${t.version || '?'} — installé</span>`
+        : `<span class="cmd">py -3.11 -m pip install ${name}</span>
+           <button class="copy-btn" onclick="copyCmd('py -3.11 -m pip install ${name}')">copier</button>`
+      }
+    </div>
+  `).join('');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function ts() { return new Date().toLocaleTimeString('fr-FR'); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+function copyCmd(cmd) {
+  navigator.clipboard.writeText(cmd);
+  toast('Commande copiée ✓');
+}
+
+// Init
+init();
+</script>
+</body>
+</html>

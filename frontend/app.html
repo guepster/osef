@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #05070f;
+  --bg1:      #080c18;
+  --bg2:      #0d1225;
+  --bg3:      #121a35;
+  --border:   rgba(0,212,255,0.08);
+  --border2:  rgba(0,212,255,0.18);
+  --g:        #00ff88;
+  --b:        #00d4ff;
+  --p:        #7c3aed;
+  --r:        #ff3355;
+  --o:        #ff8c00;
+  --y:        #fbbf24;
+  --text:     #e2eaff;
+  --muted:    #4a5880;
+  --mono:     'JetBrains Mono', monospace;
+  --sans:     'Syne', sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;min-height:100vh;}
+
+/* Noise texture */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:0.4;
+}
+/* Grid */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.02) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,0.02) 1px,transparent 1px);
+  background-size:64px 64px;pointer-events:none;z-index:0;
+}
+
+/* ── LAYOUT ── */
+.shell{display:grid;grid-template-columns:320px 1fr;min-height:100vh;position:relative;z-index:1;}
+.sidebar{background:var(--bg1);border-right:1px solid var(--border2);display:flex;flex-direction:column;overflow-y:auto;}
+.main{display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── SIDEBAR HEADER ── */
+.sidebar-top{padding:28px 24px 20px;border-bottom:1px solid var(--border);}
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.logo-hex{
+  width:38px;height:38px;
+  background:linear-gradient(135deg,rgba(0,255,136,0.15),rgba(0,212,255,0.1));
+  border:1px solid rgba(0,255,136,0.3);
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+}
+.logo-name{font-size:20px;font-weight:800;letter-spacing:3px;color:#fff;}
+.logo-name span{color:var(--g);}
+.logo-tagline{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;margin-left:50px;text-transform:uppercase;}
+
+/* ── FORM ── */
+.form-wrap{padding:20px 20px 0;flex:1;}
+.form-section{margin-bottom:20px;}
+.form-section-title{
+  font-family:var(--mono);font-size:9px;font-weight:700;
+  color:var(--b);letter-spacing:3px;text-transform:uppercase;
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.form-section-title::before{content:'';width:16px;height:1px;background:var(--b);}
+
+label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:5px;text-transform:uppercase;}
+
+input,select,textarea{
+  width:100%;background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:6px;padding:10px 12px;
+  color:var(--text);font-family:var(--mono);font-size:12px;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--b);
+  box-shadow:0 0 0 3px rgba(0,212,255,0.08);
+}
+textarea{resize:vertical;min-height:72px;line-height:1.5;}
+select option{background:#0d1225;}
+
+.field{margin-bottom:12px;}
+
+/* Pills type */
+.type-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.type-pill{
+  padding:6px 14px;border-radius:20px;
+  border:1px solid var(--border);
+  font-family:var(--mono);font-size:10px;cursor:pointer;
+  transition:.2s;background:transparent;color:var(--muted);
+}
+.type-pill:hover{border-color:var(--b);color:var(--b);}
+.type-pill.active{background:rgba(0,212,255,0.12);border-color:var(--b);color:var(--b);}
+.type-pill[data-type="entreprise"].active{background:rgba(0,255,136,0.1);border-color:var(--g);color:var(--g);}
+.type-pill[data-type="personne"].active{background:rgba(124,58,237,0.12);border-color:var(--p);color:var(--p);}
+.type-pill[data-type="domaine"].active{background:rgba(0,212,255,0.12);border-color:var(--b);color:var(--b);}
+.type-pill[data-type="crypto"].active{background:rgba(251,191,36,0.1);border-color:var(--y);color:var(--y);}
+
+/* Depth selector */
+.depth-wrap{display:flex;gap:6px;}
+.depth-btn{
+  flex:1;padding:8px;text-align:center;
+  border:1px solid var(--border);border-radius:6px;
+  font-family:var(--mono);font-size:10px;cursor:pointer;
+  transition:.2s;color:var(--muted);background:transparent;
+}
+.depth-btn.active{border-color:var(--g);color:var(--g);background:rgba(0,255,136,0.06);}
+.depth-btn .d-time{font-size:8px;color:var(--muted);display:block;margin-top:2px;}
+
+/* Conditional fields */
+.cond-field{display:none;}
+.cond-field.visible{display:block;}
+
+/* Launch button */
+.launch-wrap{padding:16px 20px 20px;}
+.btn-launch{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,rgba(0,255,136,0.15),rgba(0,212,255,0.1));
+  border:1px solid rgba(0,255,136,0.35);
+  border-radius:8px;
+  font-family:var(--mono);font-size:13px;font-weight:700;
+  color:var(--g);cursor:pointer;
+  transition:.3s;letter-spacing:2px;
+  position:relative;overflow:hidden;
+}
+.btn-launch::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(0,255,136,0.06),transparent);
+  transform:translateX(-100%);transition:.4s;
+}
+.btn-launch:hover::before{transform:translateX(0);}
+.btn-launch:hover{border-color:var(--g);box-shadow:0 0 24px rgba(0,255,136,0.15);}
+.btn-launch:active{transform:scale(0.99);}
+.btn-launch.loading{color:var(--b);border-color:var(--b);pointer-events:none;}
+
+/* ── MAIN TOP ── */
+.main-header{
+  padding:20px 32px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(5,7,15,0.8);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:10;
+}
+.inv-info{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.inv-id{color:var(--g);font-weight:700;}
+.status-bar{display:flex;align-items:center;gap:16px;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+.status-dot.live{background:var(--g);box-shadow:0 0 8px var(--g);animation:pulse-dot 1.5s infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.risk-badge{
+  font-family:var(--mono);font-size:11px;padding:4px 12px;
+  border-radius:20px;border:1px solid;
+}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 32px;}
+.tab{
+  padding:12px 20px;font-family:var(--mono);font-size:11px;
+  color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
+  transition:.2s;letter-spacing:1px;text-transform:uppercase;
+}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--b);border-bottom-color:var(--b);}
+
+/* ── CONTENT PANELS ── */
+.panel{display:none;flex:1;overflow-y:auto;padding:28px 32px;}
+.panel.active{display:block;}
+
+/* ── PIPELINE ── */
+.pipeline-grid{display:grid;gap:8px;margin-bottom:24px;}
+.agent-row{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;
+  padding:14px 18px;
+  background:var(--bg1);border:1px solid var(--border);
+  border-radius:8px;transition:.3s;
+}
+.agent-row.running{border-color:rgba(0,212,255,0.3);animation:pulse-row 2s infinite;}
+.agent-row.done{border-color:rgba(0,255,136,0.2);}
+.agent-row.alert{border-color:rgba(255,51,85,0.3);background:rgba(255,51,85,0.04);}
+.agent-row.warn{border-color:rgba(255,140,0,0.3);}
+.agent-row.skip{opacity:0.4;}
+@keyframes pulse-row{0%,100%{box-shadow:none;}50%{box-shadow:0 0 12px rgba(0,212,255,0.1);}}
+
+.agent-indicator{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--muted);flex-shrink:0;
+}
+.agent-indicator.running{background:var(--b);animation:pulse-dot 1s infinite;}
+.agent-indicator.done{background:var(--g);}
+.agent-indicator.alert{background:var(--r);}
+.agent-indicator.warn{background:var(--o);}
+.agent-indicator.skip{background:var(--muted);}
+
+.agent-info .agent-name{font-size:13px;font-weight:600;margin-bottom:2px;}
+.agent-info .agent-msg{font-family:var(--mono);font-size:10px;color:var(--muted);}
+
+.agent-badge{
+  font-family:var(--mono);font-size:9px;font-weight:700;
+  padding:3px 8px;border-radius:4px;letter-spacing:1px;
+  border:1px solid currentColor;
+}
+
+/* ── RAPPORT ── */
+.rapport-wrap{
+  background:var(--bg1);border:1px solid var(--border);
+  border-radius:10px;padding:28px;
+  font-family:var(--mono);font-size:12px;line-height:1.8;
+  white-space:pre-wrap;
+}
+.rapport-wrap h2{color:var(--g);font-family:var(--sans);margin-bottom:8px;}
+
+/* Score ring */
+.score-display{display:flex;align-items:center;gap:24px;margin-bottom:24px;}
+.score-ring{position:relative;width:100px;height:100px;flex-shrink:0;}
+.score-ring svg{transform:rotate(-90deg);}
+.score-ring .score-val{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.score-val .num{font-size:26px;font-weight:800;line-height:1;}
+.score-val .label{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;}
+.score-meta h3{font-size:16px;font-weight:700;margin-bottom:4px;}
+.score-meta p{font-family:var(--mono);font-size:11px;color:var(--muted);}
+
+/* Alerts */
+.alerts-list{display:grid;gap:8px;margin-bottom:24px;}
+.alert-item{
+  padding:12px 16px;border-radius:8px;
+  font-family:var(--mono);font-size:11px;
+  display:flex;align-items:flex-start;gap:10px;
+}
+.alert-item.critical{background:rgba(255,51,85,0.08);border:1px solid rgba(255,51,85,0.25);color:#fca5a5;}
+.alert-item.warn{background:rgba(255,140,0,0.08);border:1px solid rgba(255,140,0,0.25);color:#fed7aa;}
+.alert-item.ok{background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);color:#86efac;}
+
+/* Sources */
+.sources-grid{display:grid;gap:12px;}
+.source-card{
+  background:var(--bg1);border:1px solid var(--border);
+  border-radius:8px;padding:16px;
+}
+.source-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.source-name{font-size:13px;font-weight:700;}
+.source-reliability{
+  font-family:var(--mono);font-size:10px;
+  color:var(--muted);padding:2px 8px;
+  border:1px solid var(--border);border-radius:4px;
+}
+.source-flags{display:flex;flex-direction:column;gap:4px;}
+.flag-item{font-family:var(--mono);font-size:10px;color:var(--muted);padding:3px 0;}
+.flag-item.neg{color:#fca5a5;}
+.flag-item.pos{color:#86efac;}
+
+/* Empty state */
+.empty-state{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:60px;text-align:center;gap:16px;
+}
+.empty-icon{font-size:48px;opacity:0.3;}
+.empty-title{font-size:18px;font-weight:700;color:var(--muted);}
+.empty-sub{font-family:var(--mono);font-size:11px;color:var(--muted);opacity:0.6;max-width:280px;line-height:1.6;}
+
+/* ── ELAPSED / META ── */
+.meta-bar{
+  display:flex;gap:20px;margin-bottom:20px;flex-wrap:wrap;
+}
+.meta-item{
+  font-family:var(--mono);font-size:10px;color:var(--muted);
+  display:flex;align-items:center;gap:6px;
+}
+.meta-item strong{color:var(--text);}
+
+/* Loading scan line */
+.scan-line{
+  height:2px;background:linear-gradient(90deg,transparent,var(--b),transparent);
+  animation:scan 2s linear infinite;opacity:0;transition:opacity .3s;
+}
+.scan-line.active{opacity:1;}
+@keyframes scan{0%{background-position:-200px 0;}100%{background-position:200px 0;}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .sidebar.open{display:flex;position:fixed;inset:0;z-index:100;width:320px;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="logo">
+        <div class="logo-hex">⬡</div>
+        <div>
+          <div class="logo-name">NEX<span>US</span></div>
+        </div>
+      </div>
+      <div class="logo-tagline">Intelligence Platform v2.0</div>
+    </div>
+
+    <div class="form-wrap">
+
+      <!-- TYPE DE CIBLE -->
+      <div class="form-section">
+        <div class="form-section-title">Type de cible</div>
+        <div class="type-pills" id="typePills">
+          <div class="type-pill active" data-type="entreprise">🏢 Entreprise</div>
+          <div class="type-pill" data-type="personne">👤 Personne</div>
+          <div class="type-pill" data-type="domaine">🌐 Domaine</div>
+          <div class="type-pill" data-type="crypto">₿ Crypto</div>
+        </div>
+        <input type="hidden" id="targetType" value="entreprise">
+      </div>
+
+      <!-- CIBLE PRINCIPALE -->
+      <div class="form-section">
+        <div class="form-section-title">Cible principale</div>
+        <div class="field">
+          <label>Nom / Identifiant *</label>
+          <input type="text" id="queryInput" placeholder="ex: TotalEnergies, Jean Dupont, google.com" autocomplete="off">
+        </div>
+
+        <!-- Champ SIREN (entreprise) -->
+        <div class="field cond-field" id="fieldSiren" data-show="entreprise">
+          <label>SIREN (optionnel — améliore précision)</label>
+          <input type="text" id="sirenInput" placeholder="ex: 542051180" maxlength="14">
+        </div>
+
+        <!-- Champ domaine (domaine) -->
+        <div class="field cond-field" id="fieldDomain" data-show="domaine">
+          <label>Domaine / IP</label>
+          <input type="text" id="domainInput" placeholder="ex: example.com ou 1.2.3.4">
+        </div>
+
+        <!-- Champ crypto -->
+        <div class="field cond-field" id="fieldCrypto" data-show="crypto">
+          <label>Adresse Wallet</label>
+          <input type="text" id="cryptoInput" placeholder="ex: 1A1zP1... ou 0x742d35...">
+        </div>
+      </div>
+
+      <!-- CONTEXTE -->
+      <div class="form-section">
+        <div class="form-section-title">Contexte</div>
+        <div class="field">
+          <label>Pays principal</label>
+          <select id="countrySelect">
+            <option value="FR">🇫🇷 France</option>
+            <option value="BE">🇧🇪 Belgique</option>
+            <option value="CH">🇨🇭 Suisse</option>
+            <option value="LU">🇱🇺 Luxembourg</option>
+            <option value="DE">🇩🇪 Allemagne</option>
+            <option value="UK">🇬🇧 Royaume-Uni</option>
+            <option value="US">🇺🇸 États-Unis</option>
+            <option value="OTHER">🌍 Autre</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Informations complémentaires</label>
+          <textarea id="extraInfo" placeholder="Dirigeants connus, secteur d'activité, liens suspectés, contexte de l'enquête..."></textarea>
+        </div>
+        <div class="field">
+          <label>Référence client (interne)</label>
+          <input type="text" id="clientRef" placeholder="ex: DOSSIER-2024-001">
+        </div>
+      </div>
+
+      <!-- PROFONDEUR -->
+      <div class="form-section">
+        <div class="form-section-title">Profondeur d'analyse</div>
+        <div class="depth-wrap">
+          <div class="depth-btn" data-depth="quick">
+            RAPIDE<span class="d-time">~1 min</span>
+          </div>
+          <div class="depth-btn active" data-depth="standard">
+            STANDARD<span class="d-time">~3 min</span>
+          </div>
+          <div class="depth-btn" data-depth="deep">
+            PROFOND<span class="d-time">~8 min</span>
+          </div>
+        </div>
+        <input type="hidden" id="depthInput" value="standard">
+      </div>
+
+    </div><!-- /form-wrap -->
+
+    <div class="launch-wrap">
+      <button class="btn-launch" id="btnLaunch" onclick="launchInvestigation()">
+        ⬡ LANCER L'INVESTIGATION
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+    <div class="scan-line" id="scanLine"></div>
+
+    <div class="main-header">
+      <div class="inv-info">
+        <span id="invLabel">Aucune investigation active</span>
+        <span class="inv-id" id="invId"></span>
+      </div>
+      <div class="status-bar">
+        <div id="riskBadge" class="risk-badge" style="display:none"></div>
+        <div class="status-dot" id="statusDot"></div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="statusText">IDLE</span>
+        <button onclick="exportReport()" id="btnExport"
+          style="display:none;font-family:var(--mono);font-size:10px;padding:6px 14px;
+          background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);
+          color:var(--g);border-radius:6px;cursor:pointer;">
+          ↓ EXPORT
+        </button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('pipeline')">Pipeline</div>
+      <div class="tab" onclick="switchTab('rapport')">Rapport IA</div>
+      <div class="tab" onclick="switchTab('sources')">Sources</div>
+      <div class="tab" onclick="switchTab('graph')" id="tabGraph">Graphe</div>
+    </div>
+
+    <!-- Pipeline panel -->
+    <div class="panel active" id="panel-pipeline">
+      <div id="emptyPipeline" class="empty-state">
+        <div class="empty-icon">⬡</div>
+        <div class="empty-title">Prêt à investiguer</div>
+        <div class="empty-sub">Renseignez le formulaire et lancez l'investigation. Les agents OSINT s'exécuteront en parallèle.</div>
+      </div>
+      <div id="pipelineContent" style="display:none">
+        <div class="meta-bar" id="metaBar"></div>
+        <div class="pipeline-grid" id="agentGrid"></div>
+      </div>
+    </div>
+
+    <!-- Rapport panel -->
+    <div class="panel" id="panel-rapport">
+      <div id="emptyRapport" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">Rapport non disponible</div>
+        <div class="empty-sub">Lancez une investigation pour générer le rapport IA.</div>
+      </div>
+      <div id="rapportContent" style="display:none">
+        <div class="score-display" id="scoreDisplay"></div>
+        <div class="alerts-list" id="alertsList"></div>
+        <div class="rapport-wrap" id="rapportText"></div>
+      </div>
+    </div>
+
+    <!-- Sources panel -->
+    <div class="panel" id="panel-sources">
+      <div id="emptySources" class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">Aucune source collectée</div>
+        <div class="empty-sub">Les résultats des agents apparaîtront ici.</div>
+      </div>
+      <div class="sources-grid" id="sourcesGrid" style="display:none"></div>
+    </div>
+
+    <!-- Graphe panel -->
+    <div class="panel" id="panel-graph" style="padding:0;height:calc(100vh - 108px);">
+      <div id="emptyGraph" class="empty-state" style="height:100%">
+        <div class="empty-icon">🕸️</div>
+        <div class="empty-title">Graphe relationnel</div>
+        <div class="empty-sub">Le graphe s'affichera après l'investigation.</div>
+      </div>
+      <div id="graphContainer" style="display:none;width:100%;height:100%;"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Cytoscape.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+<!-- Cola layout for Cytoscape -->
+<script src="https://cdn.jsdelivr.net/npm/webcola@3.4.0/WebCola/cola.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-cola@2.5.1/cytoscape-cola.js"></script>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────────────────
+let state = {
+  activeTab: 'pipeline',
+  targetType: 'entreprise',
+  depth: 'standard',
+  invId: null,
+  agents: {},
+  results: null,
+  graphData: null,
+  cy: null,
+};
+
+// ── TYPE PILLS ───────────────────────────────────────────────────────────────
+document.querySelectorAll('.type-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    state.targetType = pill.dataset.type;
+    document.getElementById('targetType').value = state.targetType;
+    updateConditionalFields();
+  });
+});
+
+function updateConditionalFields() {
+  document.querySelectorAll('.cond-field').forEach(f => {
+    const show = f.dataset.show;
+    f.classList.toggle('visible', show === state.targetType);
+  });
+  const ph = {
+    entreprise: 'ex: TotalEnergies, Wirecard, 542051180',
+    personne:   'ex: Jean Dupont, Bernard Madoff',
+    domaine:    'ex: google.com, 1.2.3.4',
+    crypto:     'ex: 1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf Na',
+  };
+  document.getElementById('queryInput').placeholder = ph[state.targetType] || '';
+}
+
+// ── DEPTH BUTTONS ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.depth-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.depth-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.depth = btn.dataset.depth;
+    document.getElementById('depthInput').value = state.depth;
+  });
+});
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  state.activeTab = tab;
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['pipeline','rapport','sources','graph'];
+    t.classList.toggle('active', names[i] === tab);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${tab}`).classList.add('active');
+  if (tab === 'graph' && state.graphData && !state.cy) {
+    initGraph(state.graphData);
+  }
+}
+
+// ── LAUNCH ────────────────────────────────────────────────────────────────────
+function launchInvestigation() {
+  const query = document.getElementById('queryInput').value.trim();
+  if (!query) {
+    document.getElementById('queryInput').style.borderColor = 'var(--r)';
+    setTimeout(() => document.getElementById('queryInput').style.borderColor = '', 1500);
+    return;
+  }
+
+  // Reset
+  state.agents = {};
+  state.results = null;
+  state.graphData = null;
+  if (state.cy) { state.cy.destroy(); state.cy = null; }
+
+  const params = new URLSearchParams({
+    query,
+    target_type: state.targetType,
+    depth:       state.depth,
+    siren:       document.getElementById('sirenInput').value.trim(),
+    domain:      document.getElementById('domainInput').value.trim(),
+    country:     document.getElementById('countrySelect').value,
+    extra_info:  document.getElementById('extraInfo').value.trim(),
+    crypto_addr: document.getElementById('cryptoInput').value.trim(),
+    client_ref:  document.getElementById('clientRef').value.trim(),
+  });
+
+  // UI
+  setStatus('live', 'RUNNING');
+  document.getElementById('btnLaunch').classList.add('loading');
+  document.getElementById('btnLaunch').textContent = '◌ Investigation en cours...';
+  document.getElementById('scanLine').classList.add('active');
+  document.getElementById('emptyPipeline').style.display = 'none';
+  document.getElementById('pipelineContent').style.display = 'block';
+  document.getElementById('agentGrid').innerHTML = '';
+  document.getElementById('metaBar').innerHTML = '';
+  document.getElementById('invLabel').textContent = 'Investigation: ';
+  switchTab('pipeline');
+
+  const es = new EventSource(`/api/investigate/stream?${params.toString()}`);
+
+  es.onmessage = (e) => {
+    if (e.data === '[DONE]') {
+      es.close();
+      onDone();
+      return;
+    }
+    try {
+      const msg = JSON.parse(e.data);
+      handleEvent(msg);
+    } catch(err) {}
+  };
+
+  es.onerror = () => {
+    es.close();
+    setStatus('error', 'ERROR');
+    resetLaunchBtn();
+  };
+}
+
+function handleEvent(msg) {
+  const { type, data } = msg;
+
+  if (type === 'init') {
+    state.invId = data.inv_id;
+    document.getElementById('invLabel').textContent = `INV-`;
+    document.getElementById('invId').textContent = data.inv_id;
+    updateMetaBar(data);
+  }
+
+  if (type === 'pipeline_start') {
+    data.agents.forEach(agent => {
+      state.agents[agent.id] = { ...agent, status: 'pending', msg: 'En attente...' };
+      renderAgentRow(agent.id);
+    });
+  }
+
+  if (type === 'agent_start') {
+    const { id, msg } = data;
+    if (state.agents[id]) {
+      state.agents[id].status = 'running';
+      state.agents[id].msg = msg;
+    } else {
+      state.agents[id] = { id, status: 'running', msg, name: id, desc: '' };
+    }
+    renderAgentRow(id);
+  }
+
+  if (type === 'agent_done') {
+    const { id, status, msg } = data;
+    if (state.agents[id]) {
+      state.agents[id].status = status || 'done';
+      state.agents[id].msg = msg;
+    }
+    renderAgentRow(id);
+  }
+
+  if (type === 'phase') {
+    updateMetaBar({ phase: data.phase, phaseMsg: data.msg });
+  }
+
+  if (type === 'complete') {
+    state.results = data;
+    state.graphData = data.graph;
+    renderResults(data);
+  }
+}
+
+function renderAgentRow(id) {
+  const agent = state.agents[id];
+  if (!agent) return;
+  const grid = document.getElementById('agentGrid');
+  let row = document.getElementById(`agent-${id}`);
+  if (!row) {
+    row = document.createElement('div');
+    row.id = `agent-${id}`;
+    row.className = 'agent-row';
+    grid.appendChild(row);
+  }
+  row.className = `agent-row ${agent.status || 'pending'}`;
+
+  const badgeMap = {
+    running: ['var(--b)',   'RUNNING'],
+    done:    ['var(--g)',   'OK'],
+    ok:      ['var(--g)',   'OK'],
+    alert:   ['var(--r)',   'ALERTE'],
+    warn:    ['var(--o)',   'AVERT.'],
+    skip:    ['var(--muted)','IGNORÉ'],
+    error:   ['var(--r)',   'ERREUR'],
+    pending: ['var(--muted)','WAIT'],
+  };
+  const [bColor, bText] = badgeMap[agent.status] || badgeMap['pending'];
+
+  row.innerHTML = `
+    <div class="agent-indicator ${agent.status || 'pending'}"></div>
+    <div class="agent-info">
+      <div class="agent-name">${agent.icon || ''} ${agent.name || id}</div>
+      <div class="agent-msg">${agent.msg || ''}</div>
+    </div>
+    <div class="agent-badge" style="color:${bColor};border-color:${bColor}">${bText}</div>
+  `;
+}
+
+function updateMetaBar(data) {
+  const bar = document.getElementById('metaBar');
+  const existing = {};
+  bar.querySelectorAll('.meta-item').forEach(el => {
+    existing[el.dataset.key] = el;
+  });
+
+  const items = [
+    { key: 'query', icon: '🎯', label: 'Cible', value: data.query || '' },
+    { key: 'type',  icon: '📂', label: 'Type',  value: data.target_type || data.type || '' },
+    { key: 'depth', icon: '🔬', label: 'Mode',  value: (data.depth || '').toUpperCase() },
+    { key: 'phase', icon: '⚙️', label: 'Phase', value: data.phaseMsg || data.phase || '' },
+  ];
+
+  items.forEach(item => {
+    if (!item.value) return;
+    if (existing[item.key]) {
+      existing[item.key].querySelector('strong').textContent = item.value;
+    } else {
+      const el = document.createElement('div');
+      el.className = 'meta-item';
+      el.dataset.key = item.key;
+      el.innerHTML = `${item.icon} ${item.label}: <strong>${item.value}</strong>`;
+      bar.appendChild(el);
+    }
+  });
+}
+
+function renderResults(data) {
+  // Score + risk badge
+  const score = data.risk_score || 0;
+  const { color, level } = getRiskLevel(score);
+  const rb = document.getElementById('riskBadge');
+  rb.style.display = 'flex';
+  rb.style.color = color;
+  rb.style.borderColor = color;
+  rb.textContent = `RISQUE ${score}/100`;
+
+  document.getElementById('btnExport').style.display = 'block';
+
+  // RAPPORT panel
+  const sc = document.getElementById('scoreDisplay');
+  sc.innerHTML = `
+    <div class="score-ring">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+        <circle cx="50" cy="50" r="42" fill="none" stroke="${color}" stroke-width="8"
+          stroke-dasharray="${2 * Math.PI * 42}" stroke-dashoffset="${2 * Math.PI * 42 * (1 - score/100)}"
+          stroke-linecap="round" style="transition:stroke-dashoffset 1s ease"/>
+      </svg>
+      <div class="score-val">
+        <span class="num" style="color:${color}">${score}</span>
+        <span class="label">/ 100</span>
+      </div>
+    </div>
+    <div class="score-meta">
+      <h3 style="color:${color}">Niveau ${level}</h3>
+      <p>${data.sources_count || 0} sources analysées · ${data.elapsed || 0}s</p>
+      <p style="margin-top:4px">${new Date().toLocaleString('fr-FR')}</p>
+    </div>
+  `;
+
+  // Alerts
+  const al = document.getElementById('alertsList');
+  al.innerHTML = '';
+  (data.alerts || []).forEach(a => {
+    const isCrit = a.includes('CRITIQUE');
+    al.innerHTML += `
+      <div class="alert-item ${isCrit ? 'critical' : 'warn'}">
+        <span>${isCrit ? '🔴' : '🟡'}</span>
+        <span>${a}</span>
+      </div>
+    `;
+  });
+  if (!data.alerts || data.alerts.length === 0) {
+    al.innerHTML = `<div class="alert-item ok"><span>✅</span><span>Aucune alerte critique détectée</span></div>`;
+  }
+
+  // Rapport texte
+  document.getElementById('rapportText').textContent = data.rapport || 'Rapport non disponible.';
+  document.getElementById('emptyRapport').style.display = 'none';
+  document.getElementById('rapportContent').style.display = 'block';
+
+  // Sources
+  const sg = document.getElementById('sourcesGrid');
+  sg.innerHTML = '';
+  (data.verified_sources || []).forEach(src => {
+    const flags = src.flags || [];
+    sg.innerHTML += `
+      <div class="source-card">
+        <div class="source-card-header">
+          <div class="source-name">${src.source}</div>
+          <div class="source-reliability">Fiabilité: ${src.reliability || 0}%</div>
+        </div>
+        <div class="source-flags">
+          ${flags.map(f => `
+            <div class="flag-item ${f.includes('🔴') ? 'neg' : f.includes('✅') ? 'pos' : ''}">
+              ${f}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+  if ((data.verified_sources || []).length > 0) {
+    document.getElementById('emptySources').style.display = 'none';
+    document.getElementById('sourcesGrid').style.display = 'grid';
+  }
+}
+
+function onDone() {
+  setStatus('done', 'COMPLETE');
+  resetLaunchBtn();
+  document.getElementById('scanLine').classList.remove('active');
+  // Init graphe si l'onglet est actif
+  if (state.activeTab === 'graph' && state.graphData) {
+    initGraph(state.graphData);
+  }
+}
+
+// ── GRAPH ─────────────────────────────────────────────────────────────────────
+function initGraph(graphData) {
+  const container = document.getElementById('graphContainer');
+  document.getElementById('emptyGraph').style.display = 'none';
+  container.style.display = 'block';
+
+  const elements = [];
+
+  (graphData.nodes || []).forEach(n => {
+    elements.push({
+      data: {
+        id: n.id,
+        label: n.label,
+        type: n.type,
+        color: n.color,
+        size: n.size,
+        icon: n.icon,
+        risk: n.risk,
+        extra: n.extra,
+        group: n.group,
+      }
+    });
+  });
+
+  (graphData.edges || []).forEach(e => {
+    elements.push({
+      data: {
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        label: e.rel,
+        color: e.color,
+        width: e.width,
+        lineStyle: e.style,
+      }
+    });
+  });
+
+  state.cy = cytoscape({
+    container,
+    elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'background-color': 'data(color)',
+          'width': 'data(size)',
+          'height': 'data(size)',
+          'label': 'data(label)',
+          'color': '#e2eaff',
+          'font-size': '9px',
+          'font-family': 'JetBrains Mono, monospace',
+          'text-valign': 'bottom',
+          'text-halign': 'center',
+          'text-margin-y': '4px',
+          'text-background-color': '#05070f',
+          'text-background-opacity': 0.7,
+          'text-background-padding': '2px',
+          'text-wrap': 'wrap',
+          'text-max-width': '80px',
+          'border-width': 1.5,
+          'border-color': 'data(color)',
+          'border-opacity': 0.4,
+          'background-opacity': 0.85,
+        }
+      },
+      {
+        selector: 'node[type="company_main"]',
+        style: {
+          'width': 80,
+          'height': 80,
+          'font-size': '11px',
+          'font-weight': 700,
+          'border-width': 2.5,
+          'border-opacity': 0.9,
+          'background-opacity': 1,
+          'z-index': 10,
+        }
+      },
+      {
+        selector: 'node[type="sanction"]',
+        style: {
+          'shape': 'star',
+          'border-width': 3,
+          'border-opacity': 1,
+        }
+      },
+      {
+        selector: 'node[type="legal_alert"]',
+        style: { 'shape': 'triangle' }
+      },
+      {
+        selector: 'node[type="person"], node[type="person_be"]',
+        style: { 'shape': 'roundrectangle' }
+      },
+      {
+        selector: 'node[type="domain"]',
+        style: { 'shape': 'diamond' }
+      },
+      {
+        selector: 'node:selected',
+        style: {
+          'border-width': 3,
+          'border-color': '#00ff88',
+          'border-opacity': 1,
+          'shadow-blur': 15,
+          'shadow-color': '#00ff88',
+          'shadow-opacity': 0.5,
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'line-color': 'data(color)',
+          'width': 'data(width)',
+          'line-style': 'data(lineStyle)',
+          'target-arrow-color': 'data(color)',
+          'target-arrow-shape': 'chevron',
+          'arrow-scale': 0.8,
+          'curve-style': 'bezier',
+          'label': 'data(label)',
+          'font-size': '8px',
+          'font-family': 'JetBrains Mono',
+          'color': '#4a5880',
+          'text-rotation': 'autorotate',
+          'text-background-color': '#05070f',
+          'text-background-opacity': 0.8,
+          'text-background-padding': '1px',
+          'opacity': 0.7,
+        }
+      },
+      {
+        selector: 'edge:selected',
+        style: { 'opacity': 1, 'width': 3 }
+      }
+    ],
+    layout: {
+      name: 'cola',
+      animate: true,
+      animationDuration: 800,
+      nodeSpacing: 60,
+      edgeLengthVal: 120,
+      avoidOverlap: true,
+      infinite: false,
+      convergenceThreshold: 0.01,
+    }
+  });
+
+  // Fallback layout si cola échoue
+  state.cy.on('layoutstop', () => {});
+
+  // Click sur un nœud — panel d'info + expand
+  state.cy.on('tap', 'node', (evt) => {
+    const node = evt.target;
+    const data = node.data();
+    showNodePanel(data, node);
+  });
+
+  // Double-click = expand node (sous-pipeline)
+  state.cy.on('dblclick', 'node', (evt) => {
+    const node = evt.target;
+    expandNode(node.data());
+  });
+
+  // Zoom controls
+  addGraphControls();
+}
+
+function showNodePanel(data, cyNode) {
+  // Supprimer panel existant
+  const old = document.getElementById('nodePanel');
+  if (old) old.remove();
+
+  const panel = document.createElement('div');
+  panel.id = 'nodePanel';
+  panel.style.cssText = `
+    position:absolute;bottom:20px;right:20px;z-index:100;
+    width:260px;background:rgba(8,12,24,0.95);
+    border:1px solid rgba(0,212,255,0.2);border-radius:10px;
+    padding:16px;backdrop-filter:blur(12px);
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+  `;
+
+  const extra = data.extra || {};
+  const extraHtml = Object.entries(extra)
+    .filter(([k,v]) => v && k !== 'raw' && k !== 'is_center')
+    .slice(0,6)
+    .map(([k,v]) => `<div style="color:#4a5880">${k}: <span style="color:#e2eaff">${String(v).slice(0,40)}</span></div>`)
+    .join('');
+
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span style="color:${data.color};font-weight:700">${data.icon || ''} ${data.label}</span>
+      <span onclick="document.getElementById('nodePanel').remove()"
+        style="cursor:pointer;color:#4a5880;font-size:14px">×</span>
+    </div>
+    <div style="color:#4a5880;margin-bottom:8px">Type: <span style="color:${data.color}">${data.type}</span></div>
+    ${data.risk > 0 ? `<div style="color:#ff3355;margin-bottom:8px">⚠️ Risque: ${data.risk}/100</div>` : ''}
+    ${extraHtml}
+    <div style="margin-top:12px;display:flex;gap:8px;">
+      <button onclick="expandNode(${JSON.stringify(data).replace(/"/g,'&quot;')})" style="
+        flex:1;padding:6px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);
+        color:#00d4ff;border-radius:6px;cursor:pointer;font-size:10px;font-family:inherit;
+      ">🔍 Expand</button>
+    </div>
+  `;
+  document.getElementById('panel-graph').appendChild(panel);
+}
+
+async function expandNode(nodeData) {
+  if (!state.cy) return;
+  try {
+    const resp = await fetch('/api/expand_node', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        node_id: nodeData.id,
+        node_type: nodeData.type,
+        node_label: nodeData.label,
+        inv_id: state.invId,
+      })
+    });
+    const result = await resp.json();
+    if (!result.nodes) return;
+
+    // Ajouter les nouveaux nœuds/edges au graphe
+    result.nodes.forEach(n => {
+      if (!state.cy.getElementById(n.id).length) {
+        state.cy.add({
+          data: { id: n.id, label: n.label, type: n.type, color: n.color,
+                  size: n.size, icon: n.icon, risk: n.risk, extra: n.extra }
+        });
+      }
+    });
+    result.edges.forEach(e => {
+      if (!state.cy.getElementById(e.id).length) {
+        state.cy.add({
+          data: { id: e.id, source: e.source, target: e.target,
+                  label: e.rel, color: e.color, width: e.width, lineStyle: e.style }
+        });
+      }
+    });
+
+    state.cy.layout({ name: 'cola', animate: true, animationDuration: 600 }).run();
+  } catch(err) {
+    console.error('Expand node error:', err);
+  }
+}
+
+function addGraphControls() {
+  const container = document.getElementById('panel-graph');
+  const old = document.getElementById('graphControls');
+  if (old) old.remove();
+
+  const ctrl = document.createElement('div');
+  ctrl.id = 'graphControls';
+  ctrl.style.cssText = `
+    position:absolute;top:16px;right:16px;z-index:100;
+    display:flex;flex-direction:column;gap:6px;
+  `;
+  ctrl.innerHTML = `
+    <button onclick="state.cy.zoom(state.cy.zoom()*1.2)" style="${btnStyle()}">+</button>
+    <button onclick="state.cy.zoom(state.cy.zoom()*0.8)" style="${btnStyle()}">−</button>
+    <button onclick="state.cy.fit(null,40)" style="${btnStyle()}">⊡</button>
+    <button onclick="state.cy.layout({name:'cola',animate:true,nodeSpacing:80}).run()" style="${btnStyle()}">↺</button>
+    <button onclick="exportGraph()" style="${btnStyle()}">↓</button>
+  `;
+  container.appendChild(ctrl);
+}
+
+function btnStyle(){
+  return `width:32px;height:32px;background:rgba(8,12,24,0.9);border:1px solid rgba(0,212,255,0.2);
+    color:#00d4ff;border-radius:6px;cursor:pointer;font-size:14px;font-family:monospace;`;
+}
+
+function exportGraph() {
+  if (!state.cy) return;
+  const png = state.cy.png({ scale: 2, bg: '#05070f' });
+  const a = document.createElement('a');
+  a.href = png;
+  a.download = `nexus-graph-${state.invId || 'export'}.png`;
+  a.click();
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function getRiskLevel(score) {
+  if (score >= 70) return { color: 'var(--r)',  level: 'CRITIQUE' };
+  if (score >= 50) return { color: 'var(--o)',  level: 'ÉLEVÉ' };
+  if (score >= 30) return { color: 'var(--y)',  level: 'MODÉRÉ' };
+  return                  { color: 'var(--g)',  level: 'FAIBLE' };
+}
+
+function setStatus(type, text) {
+  const dot = document.getElementById('statusDot');
+  const st  = document.getElementById('statusText');
+  dot.className = `status-dot ${type === 'live' ? 'live' : ''}`;
+  st.textContent = text;
+  st.style.color = type === 'live' ? 'var(--b)' : type === 'done' ? 'var(--g)' : 'var(--muted)';
+}
+
+function resetLaunchBtn() {
+  const btn = document.getElementById('btnLaunch');
+  btn.classList.remove('loading');
+  btn.textContent = '⬡ LANCER L\'INVESTIGATION';
+}
+
+function exportReport() {
+  if (!state.results) return;
+  const content = [
+    `NEXUS OSINT — Rapport d'Investigation`,
+    `INV-${state.invId || 'N/A'}`,
+    `Date: ${new Date().toLocaleString('fr-FR')}`,
+    `Cible: ${state.results.query || ''}`,
+    `Score de risque: ${state.results.risk_score || 0}/100`,
+    `\n═══ ALERTES ═══`,
+    ...(state.results.alerts || []).map(a => `• ${a}`),
+    `\n═══ RAPPORT IA ═══`,
+    state.results.rapport || '',
+    `\n═══ SOURCES ═══`,
+    ...(state.results.verified_sources || []).map(s =>
+      `[${s.source}] ${(s.flags || []).join(' | ')}`
+    )
+  ].join('\n');
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `nexus-report-${state.invId || Date.now()}.txt`;
+  a.click();
+}
+
+// Init
+updateConditionalFields();
+</script>
+</body>
+</html>
